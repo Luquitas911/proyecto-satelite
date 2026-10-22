@@ -7,26 +7,26 @@ class Satelite:
         self.longitud = longitud
         self.altitud_km = altitud_km
 
-
     def tipo_orbita(self):
-        """Devuelve "LEO", "MEO", "GEO" o "HEO" según la altitud (ver tabla)."""
+            """Devuelve "LEO", "MEO", "GEO" o "HEO" según la altitud (ver tabla)."""
 
-        #Tipo 	Altitud
-        #LEO (órbita baja) 	menor a 2.000 km
-        #MEO (órbita media) 	de 2.000 km a menos de 34.000 km
-        #GEO (geoestacionaria) 	de 34.000 km a 37.000 km
-        #HEO (alta / otras) 	mayor a 37.000 km
-        if self.altitud_km < 2000:
-            return "LEO"
+            #Tipo 	Altitud
+            #LEO (órbita baja) 	menor a 2.000 km
+            #MEO (órbita media) 	de 2.000 km a menos de 34.000 km
+            #GEO (geoestacionaria) 	de 34.000 km a 37.000 km
+            #HEO (alta / otras) 	mayor a 37.000 km
 
-        if self.altitud_km > 2000 < 34000:
-            return "MEO"
+            if self.altitud_km < 2000:
+                return "LEO"
 
-        if self.altitud_km < 37000 < 34000:
-            return "GEO"
+            if self.altitud_km < 34000:
+                return "MEO"
 
-        else:
-            return "HEO"
+            if self.altitud_km <= 37000 :
+                return "GEO"
+
+            else:
+                return "HEO"
 
 
     def esta_en_zona(self, zona):
