@@ -32,10 +32,15 @@ class Satelite:
 
     def esta_en_zona(self, zona):
         """True si el satélite está dentro de la zona (lon_min, lat_min, lon_max, lat_max)."""
+        lon_min, lat_min, lon_max, lat_max = zona
+        return (lon_min <= self.longitud <= lon_max and lat_min <= self.latitud <= lat_max)
+
 
     def __str__(self):
         """Por ejemplo: 'ISS (ZARYA) | LEO | 419.7 km'"""
 
 def crear_satelites(registros, momento):
     """Devuelve una lista de objetos Satelite con su posición en `momento`."""
+
+    
 
