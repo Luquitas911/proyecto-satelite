@@ -42,12 +42,28 @@ def grupo(nombre: str) -> str:
     ... Devuelve el grupo al que pertenece un satélite según cómo empieza su nombre, 
     ... de acuerdo con la tabla de abajo. Si no coincide con ningún prefijo, devuelve "Otros". 
     """
-    
+
     for nombre_registro, nombre_comercial in GRUPOS.items():
         if nombre.startswith(nombre_registro): 
             return nombre_comercial     
             
     return "Otros"
+
+
+def contar_por_grupo(registros: list) -> dict:
+
+    """
+    ... devuelve un diccionario {grupo: cantidad}, con la cantidad de satélites de cada grupo.
+    """
+
+    conteo = {}
+    for satelite in registros:
+
+        nombre_sat = satelite.get("OBJECT_NAME", "")
+        grupo_st = grupo(nombre_sat)
+        conteo[grupo_st] = conteo.get(grupo_st, 0) + 1
+        
+    return conteo
 
 
 
