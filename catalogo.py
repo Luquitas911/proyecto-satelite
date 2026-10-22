@@ -1,6 +1,5 @@
 import json
 
-#TODO no faltarian mas grupos? 
 GRUPOS = {
         "STARLINK": "Starlink",
         "ONEWEB": "OneWeb",
@@ -28,21 +27,17 @@ def leer_satelites(ruta: str) -> list:
         return []
 
 
-#TODO Se hace generalizado o hay que poner un parametro extra? 
-# Porque aca lo resolvi poniendo un [1], pero entonces solo agarra el primer item de todo el diccionario
-
-def anio_lanzamiento(registro: list) -> int:
+def anio_lanzamiento(registro: dict) -> int:
 
     """
     ... devuelve el año de lanzamiento como int, a partir de los
     ... primeros cuatro caracteres de "OBJECT_ID"
     """
 
-    anio = int(registro[1]["OBJECT_ID"][:4])
+    anio = int(registro["OBJECT_ID"][:4])
     return anio
 
 
-#TODO la funcion funciona, pero faltan prefijos
 def grupo(nombre: str) -> str:
 
     """
@@ -57,7 +52,6 @@ def grupo(nombre: str) -> str:
     return "Otros"
 
 
-#TODO funciona bien esta funcion
 def contar_por_grupo(registros: list) -> dict:
 
     """
@@ -75,8 +69,6 @@ def contar_por_grupo(registros: list) -> dict:
     return conteo
 
 
-
-#TODO falta definir bien que es registro
 def lanzamientos_por_anio(registros: list) -> dict:
     """
     ... Devuelve un diccionario {año: cantidad de satélites lanzados ese año}
