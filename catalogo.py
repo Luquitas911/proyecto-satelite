@@ -26,6 +26,10 @@ def leer_satelites(ruta: str) -> list:
         print(f"Advertencia: El archivo '{ruta}' no existe.")
         return []
 
+
+#TODO Se hace generalizado o hay que poner un parametro extra? 
+# Porque aca lo resolvi poniendo un [1], pero entonces solo agarra el primer item de todo el diccionario
+
 def anio_lanzamiento(registro: list) -> int:
 
     """
@@ -33,7 +37,7 @@ def anio_lanzamiento(registro: list) -> int:
     ... primeros cuatro caracteres de "OBJECT_ID"
     """
 
-    anio = int(registro[OBJECT_ID][:4])
+    anio = int(registro[1]["OBJECT_ID"][:4])
     return anio
 
 def grupo(nombre: str) -> str:
