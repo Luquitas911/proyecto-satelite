@@ -1,9 +1,19 @@
 class Satelite:
     def __init__(self, nombre, latitud, longitud, altitud_km):
         """Guarda los cuatro datos como atributos del objeto."""
+        self.nombre = nombre
+        self.latitud = latitud
+        self.longitud = longitud
+        self.altitud_km = altitud_km
+
+#g
+    
 
     def tipo_orbita(self):
         """Devuelve "LEO", "MEO", "GEO" o "HEO" según la altitud (ver tabla)."""
+
+
+
 
     def esta_en_zona(self, zona):
         """True si el satélite está dentro de la zona (lon_min, lat_min, lon_max, lat_max)."""
@@ -13,4 +23,4 @@ class Satelite:
 
 def crear_satelites(registros, momento):
     """Devuelve una lista de objetos Satelite con su posición en `momento`."""
-    
+
