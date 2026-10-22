@@ -1,5 +1,6 @@
 import json
 
+#TODO no faltarian mas grupos? 
 GRUPOS = {
         "STARLINK": "Starlink",
         "ONEWEB": "OneWeb",
@@ -40,6 +41,8 @@ def anio_lanzamiento(registro: list) -> int:
     anio = int(registro[1]["OBJECT_ID"][:4])
     return anio
 
+
+#TODO la funcion funciona, pero faltan prefijos
 def grupo(nombre: str) -> str:
 
     """
@@ -54,6 +57,7 @@ def grupo(nombre: str) -> str:
     return "Otros"
 
 
+#TODO funciona bien esta funcion
 def contar_por_grupo(registros: list) -> dict:
 
     """
@@ -71,6 +75,8 @@ def contar_por_grupo(registros: list) -> dict:
     return conteo
 
 
+
+#TODO falta definir bien que es registro
 def lanzamientos_por_anio(registros: list) -> dict:
     """
     ... Devuelve un diccionario {año: cantidad de satélites lanzados ese año}
