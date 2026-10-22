@@ -57,6 +57,7 @@ def contar_por_grupo(registros: list) -> dict:
     """
 
     conteo = {}
+
     for satelite in registros:
 
         nombre_sat = satelite.get("OBJECT_NAME", "")
@@ -65,5 +66,19 @@ def contar_por_grupo(registros: list) -> dict:
         
     return conteo
 
+
+def lanzamientos_por_anio(registros: list) -> dict:
+    """
+    ... Devuelve un diccionario {año: cantidad de satélites lanzados ese año}
+    ... a partir de la lista de registros.
+    """
+
+    conteo = {}
+    
+    for satelite in registros:
+        anio = anio_lanzamiento(satelite)
+        conteo[anio] = conteo.get(anio, 0) + 1
+        
+    return conteo
 
 
