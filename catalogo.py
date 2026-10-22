@@ -1,5 +1,16 @@
 import json
 
+GRUPOS = {
+        "STARLINK": "Starlink",
+        "ONEWEB": "OneWeb",
+        "KUIPER": "Kuiper",
+        "QIANFAN": "Qianfan",
+        "IRIDIUM": "Iridium",
+        "GLOBALSTAR": "Globalstar",
+        "NAVSTAR": "GPS",
+        "BEIDOU": "BeiDou"
+    }
+
 def leer_satelites(ruta: str) -> list:
 
     """
@@ -24,3 +35,19 @@ def anio_lanzamiento(registro: list) -> int:
 
     anio = int(registro[OBJECT_ID][:4])
     return anio
+
+def grupo(nombre: str) -> str:
+
+    """
+    ... Devuelve el grupo al que pertenece un satélite según cómo empieza su nombre, 
+    ... de acuerdo con la tabla de abajo. Si no coincide con ningún prefijo, devuelve "Otros". 
+    """
+    
+    for nombre_registro, nombre_comercial in GRUPOS.items():
+        if nombre.startswith(nombre_registro): 
+            return nombre_comercial     
+            
+    return "Otros"
+
+
+
