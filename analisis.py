@@ -1,5 +1,9 @@
-def crear_satelites(registros: list, momento) -> list:
-    """Devuelve una lista de objetos Satelite con su posición en `momento`."""
+def contar_por_tipo(satelites):
+    conteo = {"LEO": 0, "MEO": 0, "GEO": 0, "HEO": 0}
+    for satelite in satelites:
+        conteo[satelite.tipo_orbita()] += 1
+    return conteo
+
 
 def mas_bajo(satelites):
     """"devuelven el objeto Satelite de menor y de mayor altitud.mas_bajo(satelites) y mas_alto(satelites): devuelven el objeto Satelite de menor y de mayor altitud."""
