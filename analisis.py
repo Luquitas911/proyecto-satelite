@@ -15,7 +15,11 @@ def mas_bajo(satelites):
 
 def mas_alto(satelites): 
     """"devuelven el objeto Satelite de menor y de mayor altitud.mas_bajo(satelites) y mas_alto(satelites): devuelven el objeto Satelite de menor y de mayor altitud."""
-
+    mayor = satelites[0]
+    for satelite in satelites:
+        if satelite.altitud_km > mayor.altitud_km:
+            mayor = satelite
+    return mayor
 
 def en_zona(satelites, zona): 
     """devuelve una lista de los satélites dentro de la zona (usando el método esta_en_zona)."""
