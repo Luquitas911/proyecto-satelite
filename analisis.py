@@ -1,8 +1,5 @@
-def contar_por_tipo(satelites): 
-    
-    """devuelve un diccionario {"LEO": n, "MEO": n, "GEO": n, "HEO": n}
-    con las cuatro claves siempre presentes (en 0 si no hay satélites de ese tipo).""" 
-
+def crear_satelites(registros: list, momento) -> list:
+    """Devuelve una lista de objetos Satelite con su posición en `momento`."""
 
 def mas_bajo(satelites):
     """"devuelven el objeto Satelite de menor y de mayor altitud.mas_bajo(satelites) y mas_alto(satelites): devuelven el objeto Satelite de menor y de mayor altitud."""
