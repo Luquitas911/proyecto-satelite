@@ -5,7 +5,7 @@ def contar_por_tipo(satelites):
     return conteo
 
 
-def mas_bajo(satelites):
+def mas_bajo(satelites: list) -> str:
     """"devuelven el objeto Satelite de menor y de mayor altitud.mas_bajo(satelites) y mas_alto(satelites): devuelven el objeto Satelite de menor y de mayor altitud."""
     menor = satelites[0]
     for satelite in satelites:
@@ -13,7 +13,7 @@ def mas_bajo(satelites):
             menor = satelite
     return menor
 
-def mas_alto(satelites): 
+def mas_alto(satelites: list) -> str:
     """"devuelven el objeto Satelite de menor y de mayor altitud.mas_bajo(satelites) y mas_alto(satelites): devuelven el objeto Satelite de menor y de mayor altitud."""
     mayor = satelites[0]
     for satelite in satelites:
