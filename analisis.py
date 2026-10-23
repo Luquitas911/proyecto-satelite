@@ -21,13 +21,21 @@ def mas_alto(satelites):
             mayor = satelite
     return mayor
 
-def en_zona(satelites, zona): 
+def en_zona(satelites, zona):
     """devuelve una lista de los satélites dentro de la zona (usando el método esta_en_zona)."""
-
+    resultado = []
+    for satelite in satelites:
+        if satelite.esta_en_zona(zona):
+            resultado.append(satelite)
+    return resultado
 
 def ordenar_por(satelites, atributo, descendente=False): 
     """función genérica que devuelve una lista nueva ordenada por cualquier atributo ("altitud_km", "latitud", "nombre", ...). Pista: sorted con key=lambda y getattr."""
-
+    resultado = []
+    for satelite in satelites:
+            if satelite.esta_en_zona(zona):
+                resultado.append(satelite)
+    return resultado.sort()
 
 def top_n(satelites, n, mas_altos=True): 
     """devuelve los n satélites más altos (o más bajos), reutilizando ordenar_por."""
