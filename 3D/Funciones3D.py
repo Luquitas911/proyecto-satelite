@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import matplotlib.pyplot as plt
 import json
+import math
 
 
 # Datos cargados
@@ -21,6 +22,8 @@ def leer_satelites(ruta: str) -> list:
         return []
 
 registros = leer_satelites("satelites.json")
+
+
 
 
 def inspeccionar_satelite(satelite):
@@ -57,4 +60,45 @@ def inspeccionar_satelite(satelite):
 
     return datos
 
-print(inspeccionar_satelite(registros[2]))
+
+
+
+def calcular_parametros_fisicos(satelite):
+
+    """
+    ... Recibe el diccionario de un satélite y devuelve un nuevo diccionario
+    ... con el semieje mayor (a), perigeo, apogeo y alturas en kilómetros.
+    """
+
+    MU_TIERRA = 398600.4418  # Constante gravitacional de la Tierra (km^3/s^2)
+    RADIO_TIERRA = 6378.137  # Radio ecuatorial de la Tierra (km)
+
+    resultados = {}
+
+    mean_motion = satelite.get("MEAN_MOTION")
+    excentricidad = satelite.get("ECCENTRICITY", 0)
+
+    if mean_motion is None or mean_motion <= 0:
+        print("Error: MEAN_MOTION inválido o faltante.")
+        return resultados
+
+    # 1. Convertir movimiento medio (rev/día) a velocidad angular (rad/s)
+    n_rad_s = (mean_motion * 2 * math.pi) / 86400.0
+
+    # 2. Tercera Ley de Kepler: a = (mu / n^2)^(1/3)
+    semieje_mayor = (MU_TIERRA / (n_rad_s ** 2)) ** (1 / 3)
+
+    # 3. Radios desde el centro de la Tierra (en km)
+    radio_perigeo = semieje_mayor * (1 - excentricidad)
+    radio_apogeo = semieje_mayor * (1 + excentricidad)
+
+
+    resultados["semieje_mayor_km"] = semieje_mayor
+    resultados["radio_perigeo_km"] = radio_perigeo
+    resultados["radio_apogeo_km"] = radio_apogeo
+    resultados["altura_perigeo_km"] = radio_perigeo - RADIO_TIERRA
+    resultados["altura_apogeo_km"] = radio_apogeo - RADIO_TIERRA
+
+    return resultados
+print(inspeccionar_satelite(registros[1]))
+print(calcular_parametros_fisicos(registros[1]))
