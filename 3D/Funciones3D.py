@@ -82,13 +82,13 @@ def calcular_parametros_fisicos(satelite):
         print("Error: MEAN_MOTION inválido o faltante.")
         return resultados
 
-    # 1. Convertir movimiento medio (rev/día) a velocidad angular (rad/s)
+    # Convertir movimiento medio (rev/día) a velocidad angular (rad/s)
     n_rad_s = (mean_motion * 2 * math.pi) / 86400.0
 
-    # 2. Tercera Ley de Kepler: a = (mu / n^2)^(1/3)
+    # Tercera Ley de Kepler: a = (mu / n^2)^(1/3)
     semieje_mayor = (MU_TIERRA / (n_rad_s ** 2)) ** (1 / 3)
 
-    # 3. Radios desde el centro de la Tierra (en km)
+    # Radios desde el centro de la Tierra (en km)
     radio_perigeo = semieje_mayor * (1 - excentricidad)
     radio_apogeo = semieje_mayor * (1 + excentricidad)
 
@@ -100,5 +100,35 @@ def calcular_parametros_fisicos(satelite):
     resultados["altura_apogeo_km"] = radio_apogeo - RADIO_TIERRA
 
     return resultados
-print(inspeccionar_satelite(registros[1]))
-print(calcular_parametros_fisicos(registros[1]))
+
+
+def normalizar_parametros(fisica):
+    """
+    ... Reutiliza el diccionario de salida generado por `calcular_parametros_fisicos`
+    ... (que contiene 'semieje_mayor_km', 'radio_perigeo_km' y 'radio_apogeo_km')
+    ... para escalar las distancias a Radios Terrestres (RT = 6371.0 km).
+    """
+    RADIO_TIERRA = 6378.137
+    normalizados = {}
+
+    if not fisica or "semieje_mayor_km" not in fisica:
+        print("Se requiere el diccionario válido generado por 'calcular_parametros_fisicos'.")
+        return normalizados
+
+    # Reutilizar las distancias en km y dividirlas por el radio de la Tierra
+    a_norm = fisica["semieje_mayor_km"] / RADIO_TIERRA
+    rp_norm = fisica["radio_perigeo_km"] / RADIO_TIERRA
+    ra_norm = fisica["radio_apogeo_km"] / RADIO_TIERRA
+
+    # Validar que el perigeo quede fuera de la esfera terrestre (radio > 1)
+    orbita_valida = rp_norm > 1.0
+
+    normalizados["a_norm"] = a_norm
+    normalizados["rp_norm"] = rp_norm
+    normalizados["ra_norm"] = ra_norm
+    normalizados["orbita_valida"] = orbita_valida
+
+    return normalizados
+
+
+print(normalizar_parametros(calcular_parametros_fisicos(registros[1])))
