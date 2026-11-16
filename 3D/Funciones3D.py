@@ -185,9 +185,6 @@ def velocidad_y_tiempo(satelite, fisica, num_puntos=360, factor_aceleracion=600.
     return cinematica
 
 
-# Paso 5: rotación de la Tierra
-# La órbita queda fija en el espacio y la Tierra gira debajo.
-
 def rotar_z(puntos: np.ndarray, angulo: float) -> np.ndarray:
     """Recibe puntos de forma (3, N) y un ángulo (rad).
 
