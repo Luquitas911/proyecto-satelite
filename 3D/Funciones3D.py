@@ -5,6 +5,10 @@ import math
 import numpy as np
 
 
+R_TIERRA = 6378.137      # radio de la Tierra en km (el que usa fisica_orbital.py)
+MU = 398600.0            # constante gravitacional de la Tierra, km^3/s^2
+DIA_SIDEREO = 86164.0    # segundos que tarda la Tierra en dar una vuelta (23 h 56 min)
+
 # Datos cargados
 
 def leer_satelites(ruta: str) -> list:
@@ -185,6 +189,17 @@ def velocidad_y_tiempo(satelite, fisica, num_puntos=360, factor_aceleracion=600.
     cinematica["tiempos_animacion_s"] = tiempos_animacion_s
 
     return cinematica
+
+def rotar_z(puntos: np.ndarray, angulo: float) -> np.ndarray:
+    """Recibe puntos de forma (3, N) y un ángulo (rad).
+
+    Devuelve los puntos rotados alrededor del eje Z (eje polar).
+    """
+    c, s = np.cos(angulo), np.sin(angulo)                      # coseno y seno del ángulo
+    x, y, z = puntos                                           # separa las tres coordenadas
+    return np.array([c * x - s * y, s * x + c * y, z])         # gira x e y, z no cambia
+
+
 
 print(f"\n{inspeccionar_satelite(registros[0])}")
 print(f"\n{calcular_parametros_fisicos(inspeccionar_satelite(registros[0]))}")
