@@ -223,6 +223,17 @@ def lineas_tierra(n_meridianos: int = 12, paralelos=(-60, -30, 0, 30, 60)) -> li
             lineas.append((pts, "tab:blue", 0.6))              # el resto: azul fino
     return lineas
 
+def dibujar_ejes(ax) -> None:
+    """Recibe los ejes 3D de Matplotlib.
+
+    Dibuja el eje polar (norte-sur) y flechas X, Y, Z con etiquetas.
+    """
+    ax.plot([0, 0], [0, 0], [-1.3, 1.3], color="black", lw=1)  # eje polar: línea que atraviesa la esfera
+    largo = 1.6                                                # largo de las flechas (en radios terrestres)
+    for dx, dy, dz, nombre in ((1, 0, 0, "X"), (0, 1, 0, "Y"), (0, 0, 1, "Z")):  # una flecha por eje
+        ax.quiver(0, 0, 0, dx * largo, dy * largo, dz * largo, color="gray",
+                  arrow_length_ratio=0.08, lw=0.8)             # dibuja la flecha desde el centro
+        ax.text(dx * (largo + 0.15), dy * (largo + 0.15), dz * (largo + 0.15), nombre, color="gray")  # etiqueta en la punta
 
 if __name__ == "__main__":                                     # solo corre si ejecutás este archivo directamente
     registros = leer_satelites("satelites.json")
