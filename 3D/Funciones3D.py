@@ -26,10 +26,6 @@ def leer_satelites(ruta: str) -> list:
         print(f"Advertencia: El archivo '{ruta}' no existe.")
         return []
 
-registros = leer_satelites("satelites.json")
-
-
-
 
 def inspeccionar_satelite(satelite):
     """
@@ -64,8 +60,6 @@ def inspeccionar_satelite(satelite):
         datos["aviso_grafico"] = "No hay parametros faltantes"
 
     return datos
-
-
 
 
 def calcular_parametros_fisicos(satelite):
@@ -108,7 +102,7 @@ def calcular_parametros_fisicos(satelite):
 
 
 def normalizar_parametros(fisica):
-    
+
     """
     ... Reutiliza el diccionario de salida generado por `calcular_parametros_fisicos`
     ... (que contiene 'semieje_mayor_km', 'radio_perigeo_km' y 'radio_apogeo_km')
@@ -190,6 +184,10 @@ def velocidad_y_tiempo(satelite, fisica, num_puntos=360, factor_aceleracion=600.
 
     return cinematica
 
+
+# Paso 5: rotación de la Tierra
+# La órbita queda fija en el espacio y la Tierra gira debajo.
+
 def rotar_z(puntos: np.ndarray, angulo: float) -> np.ndarray:
     """Recibe puntos de forma (3, N) y un ángulo (rad).
 
@@ -200,7 +198,39 @@ def rotar_z(puntos: np.ndarray, angulo: float) -> np.ndarray:
     return np.array([c * x - s * y, s * x + c * y, z])         # gira x e y, z no cambia
 
 
+def lineas_tierra(n_meridianos: int = 12, paralelos=(-60, -30, 0, 30, 60)) -> list:
+    """Devuelve una lista de (puntos (3, N), color, ancho) con la malla de la Tierra.
 
-print(f"\n{inspeccionar_satelite(registros[0])}")
-print(f"\n{calcular_parametros_fisicos(inspeccionar_satelite(registros[0]))}")
-print(f"\n{velocidad_y_tiempo(inspeccionar_satelite(registros[0]), calcular_parametros_fisicos(inspeccionar_satelite(registros[0])))}")
+    Incluye meridianos, paralelos, el ecuador (verde) y el meridiano de
+    Greenwich (rojo), que sirve para ver la rotación. Radio 1.
+    """
+    t = np.linspace(0, 2 * np.pi, 120)                         # ángulos para dar la vuelta a un paralelo
+    lat = np.linspace(-np.pi / 2, np.pi / 2, 120)              # de polo sur a polo norte
+    lineas = []                                                # acá se acumulan todas las líneas
+    for k in range(n_meridianos):                              # un meridiano por cada k
+        lon = 2 * np.pi * k / n_meridianos                     # longitud de este meridiano
+        pts = np.array([np.cos(lat) * np.cos(lon), np.cos(lat) * np.sin(lon), np.sin(lat)])  # puntos sobre la esfera
+        if k == 0:
+            lineas.append((pts, "tab:red", 2.2))               # Greenwich: rojo y más grueso
+        else:
+            lineas.append((pts, "tab:blue", 0.6))              # el resto: azul fino
+    for grados in paralelos:                                   # un paralelo por cada latitud
+        la = np.radians(grados)                                # latitud en radianes
+        pts = np.array([np.cos(la) * np.cos(t), np.cos(la) * np.sin(t), np.full_like(t, np.sin(la))])  # círculo a esa latitud
+        if grados == 0:
+            lineas.append((pts, "tab:green", 1.6))             # ecuador: verde y más grueso
+        else:
+            lineas.append((pts, "tab:blue", 0.6))              # el resto: azul fino
+    return lineas
+
+
+if __name__ == "__main__":                                     # solo corre si ejecutás este archivo directamente
+    registros = leer_satelites("satelites.json")
+    if registros:
+        print(f"\n{inspeccionar_satelite(registros[0])}")
+        print(f"\n{calcular_parametros_fisicos(inspeccionar_satelite(registros[0]))}")
+        print(f"\n{velocidad_y_tiempo(inspeccionar_satelite(registros[0]), calcular_parametros_fisicos(inspeccionar_satelite(registros[0])))}")
+
+    p = np.array([[1.0], [0.0], [0.0]])                        # un punto sobre el eje X
+    print("Punto (1, 0, 0) girado 90 grados (debe ser ~(0, 1, 0)):", rotar_z(p, np.pi / 2).T[0])
+    print("Líneas de la malla (debe ser 17):", len(lineas_tierra()))   # 12 meridianos + 5 paralelos
