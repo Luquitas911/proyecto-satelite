@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import matplotlib.pyplot as plt
 import json
 import math
+import numpy as np
 
 
 # Datos cargados
@@ -103,11 +104,13 @@ def calcular_parametros_fisicos(satelite):
 
 
 def normalizar_parametros(fisica):
+    
     """
     ... Reutiliza el diccionario de salida generado por `calcular_parametros_fisicos`
     ... (que contiene 'semieje_mayor_km', 'radio_perigeo_km' y 'radio_apogeo_km')
     ... para escalar las distancias a Radios Terrestres (RT = 6371.0 km).
     """
+
     RADIO_TIERRA = 6378.137
     normalizados = {}
 
@@ -131,4 +134,58 @@ def normalizar_parametros(fisica):
     return normalizados
 
 
-print(normalizar_parametros(calcular_parametros_fisicos(registros[1])))
+
+def velocidad_y_tiempo(satelite, fisica, num_puntos=360, factor_aceleracion=600.0):
+
+    """
+    ... Reutiliza el diccionario generado por `calcular_parametros_fisicos` para
+    ... calcular el período orbital, el perfil de velocidades (ecuación vis-viva)
+    ... en cada punto de la elipse y los tiempos escalados para la animación.
+    """
+
+    MU_TIERRA = 398600.0
+    cinematica = {}
+
+    a = fisica["semieje_mayor_km"]
+    e = satelite.get("ECCENTRICITY", 0.0)
+
+    # Período orbital real: T = 2 * pi * sqrt(a^3 / mu)
+    periodo_s = 2.0 * math.pi * math.sqrt((a ** 3) / MU_TIERRA)
+    periodo_min = periodo_s / 60.0
+    duracion_animacion_s = periodo_s / factor_aceleracion
+
+    # Calcular distancia radial r (km) en cada ángulo de la órbita (0 a 2*pi)
+    angulos_theta = np.linspace(0, 2 * math.pi, num_puntos)
+    radios_r = (a * (1.0 - e ** 2)) / (1.0 + e * np.cos(angulos_theta))
+
+    # Ecuación vis-viva en cada punto: v = sqrt(mu * (2/r - 1/a))
+    velocidades_kms = np.sqrt(MU_TIERRA * ((2.0 / radios_r) - (1.0 / a)))
+
+    # Tiempo no uniforme entre puntos (va más rápido en el perigeo)
+    # Longitud de arco aproximada ds entre puntos consecutivos: ds ≈ r * d_theta
+    d_theta = angulos_theta[1] - angulos_theta[0]
+    ds = radios_r[:-1] * d_theta
+    v_tramo = (velocidades_kms[:-1] + velocidades_kms[1:]) / 2.0  # Velocidad promedio del tramo
+
+    dt_reales = ds / v_tramo
+    dt_animacion = dt_reales / factor_aceleracion
+
+    # Vector de tiempos acumulados (arranca en t = 0)
+    tiempos_animacion_s = np.concatenate(([0.0], np.cumsum(dt_animacion)))
+
+    cinematica["periodo_s"] = periodo_s
+    cinematica["periodo_min"] = periodo_min
+    cinematica["duracion_animacion_s"] = duracion_animacion_s
+    cinematica["factor_aceleracion"] = factor_aceleracion
+    cinematica["angulos_theta"] = angulos_theta
+    cinematica["radios_r_km"] = radios_r
+    cinematica["velocidades_kms"] = velocidades_kms
+    cinematica["v_perigeo_kms"] = float(np.max(velocidades_kms))
+    cinematica["v_apogeo_kms"] = float(np.min(velocidades_kms))
+    cinematica["tiempos_animacion_s"] = tiempos_animacion_s
+
+    return cinematica
+
+print(f"\n{inspeccionar_satelite(registros[0])}")
+print(f"\n{calcular_parametros_fisicos(inspeccionar_satelite(registros[0]))}")
+print(f"\n{velocidad_y_tiempo(inspeccionar_satelite(registros[0]), calcular_parametros_fisicos(inspeccionar_satelite(registros[0])))}")
