@@ -5,11 +5,18 @@ import math
 import numpy as np
 
 
+# ======================================================================
+# CONSTANTES
+# ======================================================================
+
 R_TIERRA = 6378.137      # radio de la Tierra en km (el que usa fisica_orbital.py)
 MU = 398600.0            # constante gravitacional de la Tierra, km^3/s^2
 DIA_SIDEREO = 86164.0    # segundos que tarda la Tierra en dar una vuelta (23 h 56 min)
 
-# Datos cargados
+# ======================================================================
+# DATOS
+# ======================================================================
+
 
 def leer_satelites(ruta: str) -> list:
 
@@ -61,6 +68,10 @@ def inspeccionar_satelite(satelite):
 
     return datos
 
+
+# ======================================================================
+# FÍSICA ORBITAL
+# ======================================================================
 
 def calcular_parametros_fisicos(satelite):
 
@@ -185,6 +196,10 @@ def velocidad_y_tiempo(satelite, fisica, num_puntos=360, factor_aceleracion=600.
     return cinematica
 
 
+# ======================================================================
+# TIERRA: ROTACIÓN, MALLA Y EJES
+# ======================================================================
+
 def rotar_z(puntos: np.ndarray, angulo: float) -> np.ndarray:
     """Recibe puntos de forma (3, N) y un ángulo (rad).
 
@@ -232,6 +247,41 @@ def dibujar_ejes(ax) -> None:
                   arrow_length_ratio=0.08, lw=0.8)             # dibuja la flecha desde el centro
         ax.text(dx * (largo + 0.15), dy * (largo + 0.15), dz * (largo + 0.15), nombre, color="gray")  # etiqueta en la punta
 
+
+# ======================================================================
+# ANIMACIÓN (PROTOTIPO DEL NOTEBOOK)
+# ======================================================================
+
+def esfera(cx, cy, cz, r, n=30):
+    u = np.linspace(0, 2 * np.pi, n)
+    v = np.linspace(0, np.pi, n)
+    x = cx + r * np.outer(np.cos(u), np.sin(v))
+    y = cy + r * np.outer(np.sin(u), np.sin(v))
+    z = cz + r * np.outer(np.ones_like(u), np.cos(v))
+    return x, y, z
+
+def punto_orbita(t, a, b, theta):
+    ex = a * np.cos(t)
+    ey = b * np.sin(t)
+    ez = 0 * t
+    # rotación alrededor del eje X
+    ey_rot = ey * np.cos(theta) - ez * np.sin(theta)
+    ez_rot = ey * np.sin(theta) + ez * np.cos(theta)
+    return ex, ey_rot, ez_rot
+
+
+def dibujar_pelota(t0, pelota, ax, a, b, theta):
+    if pelota[0] is not None:
+        pelota[0].remove()
+    px, py, pz = punto_orbita(t0, a, b, theta)
+    x2, y2, z2 = esfera(px, py, pz, 0.2)
+    pelota[0] = ax.plot_surface(x2, y2, z2, color='orange')
+
+
+def actualizar(frame, pelota, ax, a, b, theta):
+    dibujar_pelota(2 * np.pi * frame / 120, pelota, ax, a, b, theta)
+
+
 if __name__ == "__main__":                                     # solo corre si ejecutás este archivo directamente
     registros = leer_satelites("satelites.json")
     if registros:
@@ -242,3 +292,4 @@ if __name__ == "__main__":                                     # solo corre si e
     p = np.array([[1.0], [0.0], [0.0]])                        # un punto sobre el eje X
     print("Punto (1, 0, 0) girado 90 grados (debe ser ~(0, 1, 0)):", rotar_z(p, np.pi / 2).T[0])
     print("Líneas de la malla (debe ser 17):", len(lineas_tierra()))   # 12 meridianos + 5 paralelos
+
