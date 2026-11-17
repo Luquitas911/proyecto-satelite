@@ -5,17 +5,15 @@ import math
 import numpy as np
 
 
-# ======================================================================
+# ---------------------------------------------------------------------
 # CONSTANTES
-# ======================================================================
 
 R_TIERRA = 6378.137      # radio de la Tierra en km (el que usa fisica_orbital.py)
 MU = 398600.0            # constante gravitacional de la Tierra, km^3/s^2
 DIA_SIDEREO = 86164.0    # segundos que tarda la Tierra en dar una vuelta (23 h 56 min)
 
-# ======================================================================
+# ---------------------------------------------------------------------
 # DATOS
-# ======================================================================
 
 
 def leer_satelites(ruta: str) -> list:
@@ -69,9 +67,8 @@ def inspeccionar_satelite(satelite):
     return datos
 
 
-# ======================================================================
+# ---------------------------------------------------------------------
 # FÍSICA ORBITAL
-# ======================================================================
 
 def calcular_parametros_fisicos(satelite):
 
@@ -196,9 +193,8 @@ def velocidad_y_tiempo(satelite, fisica, num_puntos=360, factor_aceleracion=600.
     return cinematica
 
 
-# ======================================================================
+# ---------------------------------------------------------------
 # TIERRA: ROTACIÓN, MALLA Y EJES
-# ======================================================================
 
 def rotar_z(puntos: np.ndarray, angulo: float) -> np.ndarray:
     """Recibe puntos de forma (3, N) y un ángulo (rad).
@@ -208,6 +204,9 @@ def rotar_z(puntos: np.ndarray, angulo: float) -> np.ndarray:
     c, s = np.cos(angulo), np.sin(angulo)                      # coseno y seno del ángulo
     x, y, z = puntos                                           # separa las tres coordenadas
     return np.array([c * x - s * y, s * x + c * y, z])         # gira x e y, z no cambia
+
+#No se llego a aplicar esta funcion
+
 
 
 def lineas_tierra(n_meridianos: int = 12, paralelos=(-60, -30, 0, 30, 60)) -> list:

@@ -10,8 +10,8 @@ from Funciones3D import (
 )
 
 # ----------------------------------------------------------------------
-# 1. DATOS: elegimos un satélite de la lista
-# ----------------------------------------------------------------------
+# DATOS: elegimos un satélite de la lista
+
 RUTA_JSON = "datos/satelites.json"
 INDICE = 0                       # posición del satélite dentro de la lista
 DURACION_VUELTA_S = 10           # cuánto dura una vuelta orbital en la animación
@@ -28,8 +28,8 @@ if not registros:                # solo para poder probar sin el JSON (ISS de ej
 satelite = inspeccionar_satelite(registros[INDICE])
 
 # ----------------------------------------------------------------------
-# 2. FÍSICA: parámetros, radios terrestres, velocidad y tiempo
-# ----------------------------------------------------------------------
+# FÍSICA: parámetros, radios terrestres, velocidad y tiempo
+
 fisica = calcular_parametros_fisicos(satelite)
 if not fisica:
     raise SystemExit("No se pudieron calcular los parámetros físicos de este satélite.")
@@ -45,8 +45,8 @@ factor = cinematica["periodo_s"] / DURACION_VUELTA_S
 cinematica = velocidad_y_tiempo(satelite, fisica, factor_aceleracion=factor)
 
 # ----------------------------------------------------------------------
-# 3. ÓRBITA: a, b y la inclinación que espera punto_orbita
-# ----------------------------------------------------------------------
+#  ÓRBITA: a, b y la inclinación que espera punto_orbita
+
 e = satelite.get("ECCENTRICITY", 0.0)
 a = norm["a_norm"]                       # semieje mayor, en radios terrestres
 b = a * np.sqrt(1 - e ** 2)              # semieje menor
@@ -56,8 +56,8 @@ t = np.linspace(0, 2 * np.pi, 300)
 ox, oy, oz = punto_orbita(t, a, b, theta)
 
 # ----------------------------------------------------------------------
-# 4. FIGURA: Tierra, malla, ejes y órbita
-# ----------------------------------------------------------------------
+# FIGURA: Tierra, malla, ejes y órbita
+
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(projection='3d')
 
@@ -88,8 +88,8 @@ ax.text2D(0.02, 0.97,
           transform=ax.transAxes, va='top', family='monospace', fontsize=9)
 
 # ----------------------------------------------------------------------
-# 5. ANIMACIÓN: la pelotita recorre la órbita
-# ----------------------------------------------------------------------
+# ANIMACIÓN: la pelotita recorre la órbita
+
 pelota = [None]
 dibujar_pelota(0, pelota, ax, a, b, theta)   # posición inicial, así se ve aunque no corra la animación
 

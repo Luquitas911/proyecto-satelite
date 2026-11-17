@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador Orbital 3D — UNRN · Programación 1</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --bg-card: rgba(15, 23, 42, 0.85);
+      --border: rgba(56, 189, 248, 0.22);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #f59e0b;
+      --green: #34d399;
+      --red: #f87171;
+      --code-bg: #0b1120;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+      background: radial-gradient(circle at 80% 15%, #111c36 0%, var(--bg) 55%, #04070d 100%);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Fondo sutil de grilla espacial */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Barra de progreso superior */
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      width: 0%;
+      transition: width 0.35s ease;
+      z-index: 50;
+    }
+
+    /* Contenedor de diapositivas */
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: clamp(24px, 4vw, 56px) clamp(28px, 5vw, 72px) 84px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      transform: translateX(30px);
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    /* Encabezados */
+    .tag {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+      width: fit-content;
+    }
+
+    h1 {
+      font-size: clamp(2.1rem, 4.4vw, 3.8rem);
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.45rem);
+      line-height: 1.15;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #f8fafc;
+    }
+
+    h3 {
+      font-size: clamp(1rem, 1.5vw, 1.25rem);
+      color: var(--accent);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    p, li {
+      font-size: clamp(0.95rem, 1.35vw, 1.18rem);
+      line-height: 1.55;
+      color: var(--text);
+    }
+
+    .subtitle {
+      font-size: clamp(1.05rem, 1.6vw, 1.4rem);
+      color: var(--muted);
+      max-width: 780px;
+      margin-bottom: 30px;
+    }
+
+    /* Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: clamp(16px, 2.2vw, 26px);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .card.highlight {
+      border-color: rgba(245, 158, 11, 0.45);
+      background: linear-gradient(145deg, rgba(245, 158, 11, 0.08), var(--bg-card));
+    }
+
+    ul.clean {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    ul.clean li {
+      padding-left: 22px;
+      position: relative;
+    }
+
+    ul.clean li::before {
+      content: "▸";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    /* Bloques de código y fórmulas */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+      font-size: clamp(0.78rem, 1.05vw, 0.94rem);
+      line-height: 1.5;
+      color: #cbd5e1;
+      overflow-x: auto;
+      user-select: text;
+    }
+
+    .kw { color: #c084fc; }
+    .fn { color: #38bdf8; }
+    .str { color: #34d399; }
+    .num { color: #f59e0b; }
+    .cm { color: #64748b; font-style: italic; }
+
+    .formula {
+      background: rgba(56, 189, 248, 0.08);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-family: "Cambria Math", "Times New Roman", Georgia, serif;
+      font-size: clamp(1.1rem, 1.8vw, 1.5rem);
+      color: #f8fafc;
+      margin: 12px 0;
+      letter-spacing: 0.02em;
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: Consolas, monospace;
+      font-size: 0.88em;
+      background: rgba(56, 189, 248, 0.14);
+      color: #7dd3fc;
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+
+    .badge.amber {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fcd34d;
+    }
+
+    .badge.green {
+      background: rgba(52, 211, 153, 0.16);
+      color: #6ee7b7;
+    }
+
+    .badge.red {
+      background: rgba(248, 113, 113, 0.16);
+      color: #fca5a5;
+    }
+
+    /* Portada */
+    .cover-meta {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+      padding-top: 22px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      color: var(--text);
+      font-size: 1.05rem;
+    }
+
+    .cover-meta strong {
+      display: block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    /* Mini simulación Canvas */
+    .sim-wrap {
+      display: grid;
+      grid-template-columns: 1.25fr 0.9fr;
+      gap: 22px;
+      align-items: center;
+    }
+
+    canvas#orbitCanvas {
+      width: 100%;
+      height: 360px;
+      background: #040812;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: block;
+    }
+
+    .controls label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+
+    .controls input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      margin-bottom: 14px;
+      cursor: pointer;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    button.btn {
+      background: rgba(56, 189, 248, 0.14);
+      color: var(--text);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 7px 13px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button.btn:hover {
+      background: rgba(56, 189, 248, 0.28);
+    }
+
+    button.btn.primary {
+      background: var(--accent);
+      color: #04101d;
+      font-weight: 700;
+    }
+
+    .telemetry {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .tel-box {
+      background: var(--code-bg);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .tel-box span {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .tel-box strong {
+      font-size: 1.12rem;
+      font-family: Consolas, monospace;
+      color: var(--accent-2);
+    }
+
+    /* Demo en vivo */
+    .demo-banner {
+      text-align: center;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .demo-cmd {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 14px 28px;
+      background: var(--code-bg);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      font-family: Consolas, monospace;
+      font-size: 1.25rem;
+      color: var(--green);
+      user-select: text;
+    }
+
+    /* Barra de navegación inferior */
+    .nav-bar {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      padding: 8px 16px;
+      border-radius: 999px;
+      backdrop-filter: blur(10px);
+      z-index: 40;
+    }
+
+    .nav-bar button {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
+    .nav-bar button:hover {
+      background: rgba(56, 189, 248, 0.16);
+      color: var(--accent);
+    }
+
+    .slide-counter {
+      font-family: Consolas, monospace;
+      font-size: 0.9rem;
+      color: var(--muted);
+      min-width: 64px;
+      text-align: center;
+    }
+
+    /* Notas del orador (tecla N) */
+    .speaker-notes {
+      position: fixed;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(880px, 92vw);
+      background: rgba(2, 6, 23, 0.95);
+      border: 1px solid var(--accent-2);
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 0.92rem;
+      color: #fde68a;
+      z-index: 45;
+      display: none;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .speaker-notes.visible {
+      display: block;
+    }
+
+    @media (max-width: 860px) {
+      .grid-2, .grid-3, .sim-wrap {
+        grid-template-columns: 1fr;
+      }
+      canvas#orbitCanvas { height: 220px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="progress-bar" id="progressBar"></div>
+
+  <main class="deck" id="deck">
+
+    <!-- SLIDE 1: PORTADA -->
+    <section class="slide active" data-note="[~1 min] Bienvenida. Presentar al equipo, la materia y qué resuelve el proyecto: pasar de datos crudos de un satélite a una simulación orbital 3D con física real.">
+      <span class="tag">UNRN · Programación 1</span>
+      <h1>Simulación y Visualización<br>Orbital 3D en Python</h1>
+      <p class="subtitle">
+        Cálculo de parámetros físicos con leyes de Kepler, ecuación vis-viva y representación tridimensional interactiva a partir de datos reales de satélites.
+      </p>
+      <div class="cover-meta">
+        <div><strong>Universidad</strong>UNRN</div>
+        <div><strong>Materia</strong>Programación 1</div>
+        <div><strong>Integrantes</strong>Lucas Carava · Ezequiel Santana · Esteban Mezei</div>
+        <div><strong>Módulos principales</strong><span class="badge">Funciones3D.py</span> &nbsp;<span class="badge">pruebas3d.py</span></div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: PROBLEMA Y OBJETIVO -->
+    <section class="slide" data-note="[~1.5 min] Explicar por qué los catálogos espaciales (TLE/JSON) son difíciles de leer a simple vista y cómo el programa los traduce a física y geometría 3D.">
+      <span class="tag">01 · Contexto y Objetivo</span>
+      <h2>¿Por qué simular órbitas en 3D?</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>El problema</h3>
+          <ul class="clean">
+            <li>Los catálogos satelitales (como CelesTrak) entregan parámetros abstractos: <span class="badge">MEAN_MOTION</span>, <span class="badge">ECCENTRICITY</span>, <span class="badge">INCLINATION</span>.</li>
+            <li>A simple vista no dicen a qué altura vuela el satélite, qué tan rápido va ni si su órbita es estable.</li>
+            <li>Una vuelta real tarda desde ~90 min (LEO) hasta 24 h (GEO): imposible observarla en tiempo real.</li>
+          </ul>
+        </div>
+        <div class="card highlight">
+          <h3>Nuestra solución</h3>
+          <ul class="clean">
+            <li><strong>Leer y validar</strong> registros reales desde formato JSON.</li>
+            <li><strong>Calcular la física orbital</strong>: semieje mayor, perigeo, apogeo, período y velocidades.</li>
+            <li><strong>Normalizar a escala terrestre</strong> para verificar que la órbita sea válida.</li>
+            <li><strong>Animar en 3D</strong> acelerando el tiempo para verlo en 10 segundos.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: ARQUITECTURA -->
+    <section class="slide" data-note="[~1.5 min] Mostrar la separación de responsabilidades: Funciones3D.py es la librería reutilizable y pruebas3d.py es el script ejecutable que arma la escena.">
+      <span class="tag">02 · Arquitectura</span>
+      <h2>Estructura modular del proyecto</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3><span class="badge">Funciones3D.py</span> · Motor y Utilidades</h3>
+          <ul class="clean">
+            <li><strong>Datos:</strong> <span class="badge">leer_satelites</span>, <span class="badge">inspeccionar_satelite</span></li>
+            <li><strong>Física orbital:</strong> <span class="badge">calcular_parametros_fisicos</span>, <span class="badge">normalizar_parametros</span>, <span class="badge">velocidad_y_tiempo</span></li>
+            <li><strong>Geometría Tierra:</strong> <span class="badge">lineas_tierra</span>, <span class="badge">dibujar_ejes</span>, <span class="badge">rotar_z</span></li>
+            <li><strong>Animación:</strong> <span class="badge">esfera</span>, <span class="badge">punto_orbita</span>, <span class="badge">dibujar_pelota</span>, <span class="badge">actualizar</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="badge amber">pruebas3d.py</span> · Orquestador</h3>
+          <ul class="clean">
+            <li>Define configuración (<span class="badge">RUTA_JSON</span>, <span class="badge">INDICE</span>, <span class="badge">DURACION_VUELTA_S = 10</span>).</li>
+            <li>Ejecuta en cadena la carga, física y normalización.</li>
+            <li>Calcula el factor de aceleración temporal.</li>
+            <li>Construye la figura 3D con <strong>Matplotlib</strong> y lanza <span class="badge">FuncAnimation</span>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: DATOS Y VALIDACIÓN -->
+    <section class="slide" data-note="[~1.5 min] Resaltar la tolerancia a fallos: si no existe el JSON carga la ISS por defecto, y si faltan RAAN o Arg. del perigeo los asume en 0 pero deja un aviso visible en el gráfico.">
+      <span class="tag">03 · Entrada de Datos</span>
+      <h2>Lectura e inspección de satélites</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Carga tolerante a fallos</h3>
+          <ul class="clean">
+            <li><span class="badge">leer_satelites(ruta)</span> abre el JSON en UTF-8 y captura <span class="badge">FileNotFoundError</span>.</li>
+            <li>Si la lista vuelve vacía, <span class="badge">pruebas3d.py</span> activa un satélite de respaldo: <strong>ISS (ZARYA)</strong>.</li>
+            <li><span class="badge">inspeccionar_satelite()</span> filtra campos nulos y verifica si faltan ángulos (<span class="badge">RA_OF_ASC_NODE</span> o <span class="badge">ARG_OF_PERICENTER</span>).</li>
+            <li>Si faltan, los asume en <span class="badge">0</span> y guarda un <span class="badge">aviso_grafico</span> para mostrarlo en pantalla.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Ejemplo de registro de entrada</h3>
+<pre>{
+  <span class="str">"OBJECT_NAME"</span>: <span class="str">"ISS (ZARYA)"</span>,
+  <span class="str">"MEAN_MOTION"</span>: <span class="num">15.5</span>,        <span class="cm">// rev/día</span>
+  <span class="str">"ECCENTRICITY"</span>: <span class="num">0.0005</span>,     <span class="cm">// forma elipse</span>
+  <span class="str">"INCLINATION"</span>: <span class="num">51.6</span>,        <span class="cm">// grados</span>
+  <span class="str">"RA_OF_ASC_NODE"</span>: <span class="num">100.0</span>,
+  <span class="str">"ARG_OF_PERICENTER"</span>: <span class="num">80.0</span>
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: FÍSICA 1 - KEPLER -->
+    <section class="slide" data-note="[~2 min] Explicar cómo pasamos de revoluciones por día (MEAN_MOTION) a velocidad angular n, y de ahí con la 3ra Ley de Kepler al semieje mayor a, perigeo y apogeo.">
+      <span class="tag">04 · Física Orbital I</span>
+      <h2>3ra Ley de Kepler: de datos a kilómetros</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Paso a paso en <span class="badge">calcular_parametros_fisicos</span></h3>
+          <ul class="clean">
+            <li>Se valida que <span class="badge">MEAN_MOTION &gt; 0</span> (si no, el programa frena con <span class="badge">SystemExit</span>).</li>
+            <li>Se convierte de vueltas/día a radianes/segundo:</li>
+          </ul>
+          <div class="formula">n = (MEAN_MOTION · 2π) / 86400</div>
+          <ul class="clean">
+            <li>Con la constante gravitacional terrestre <span class="badge">μ ≈ 398600.4 km³/s²</span> despejamos el <strong>semieje mayor</strong>:</li>
+          </ul>
+          <div class="formula">a = (μ / n²)<sup>1/3</sup></div>
+        </div>
+        <div class="card">
+          <h3>Perigeo, Apogeo y Alturas</h3>
+          <p style="margin-bottom: 10px;">Usando la excentricidad <strong>e</strong> obtenemos los puntos extremos desde el centro terrestre y restamos <span class="badge">R_TIERRA = 6378.137 km</span>:</p>
+          <div class="formula">r<sub>p</sub> = a · (1 − e) &nbsp;|&nbsp; r<sub>a</sub> = a · (1 + e)</div>
+<pre><span class="cm"># Salida del diccionario 'fisica' (ISS aprox.)</span>
+semieje_mayor_km  ≈ <span class="num">6784 km</span>
+radio_perigeo_km  ≈ <span class="num">6781 km</span>
+altura_perigeo_km ≈ <span class="num">403 km</span>
+altura_apogeo_km  ≈ <span class="num">409 km</span></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: NORMALIZACIÓN -->
+    <section class="slide" data-note="[~1.5 min] Explicar por qué dividimos por 6378.137 km: facilita dibujar la Tierra como esfera unitaria (radio = 1) y validar en una línea si el perigeo choca contra la Tierra.">
+      <span class="tag">05 · Escala Espacial</span>
+      <h2>Normalización a Radios Terrestres (RT)</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>¿Por qué normalizar en <span class="badge">normalizar_parametros</span>?</h3>
+          <ul class="clean">
+            <li>Trabajar en miles de kilómetros vuelve incómodos los ejes 3D de Matplotlib.</li>
+            <li>Dividiendo todas las distancias por <span class="badge">R_TIERRA = 6378.137 km</span>, la Tierra pasa a tener <strong>radio = 1.0</strong>.</li>
+            <li>Para la ISS, <span class="badge">a_norm ≈ 1.064 RT</span> (apenas un 6.4% por encima de la superficie).</li>
+          </ul>
+        </div>
+        <div class="card highlight">
+          <h3>Validación de colisión</h3>
+          <div class="formula">orbita_valida = (r<sub>p_norm</sub> &gt; 1.0)</div>
+          <p style="margin-top: 10px;">
+            Si el perigeo normalizado es menor o igual a <span class="badge red">1.0</span>, significa que el satélite atraviesa la superficie terrestre. El script imprime una advertencia antes de graficar.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: VIS-VIVA Y TIEMPO -->
+    <section class="slide" data-note="[~2 min] Explicar que en órbitas elípticas la velocidad NO es constante (ecuación vis-viva), y cómo escalamos un período de ~92 minutos a 10 segundos en pantalla.">
+      <span class="tag">06 · Física Orbital II</span>
+      <h2>Ecuación Vis-Viva y Escala Temporal</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Perfil de velocidades (<span class="badge">velocidad_y_tiempo</span>)</h3>
+          <p>En 360 puntos de la órbita (θ de 0 a 2π) calculamos el radio polar y la velocidad instantánea:</p>
+          <div class="formula">r(θ) = a(1 − e²) / (1 + e·cos θ)</div>
+          <div class="formula">v = √[ μ · (2/r − 1/a) ]</div>
+          <ul class="clean">
+            <li><strong>Perigeo (más cerca):</strong> velocidad máxima (<span class="badge green">v_perigeo_kms</span>).</li>
+            <li><strong>Apogeo (más lejos):</strong> velocidad mínima (<span class="badge amber">v_apogeo_kms</span>).</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Aceleración del tiempo para la demo</h3>
+          <ul class="clean">
+            <li>Período real: <span class="badge">T = 2π · √(a³/μ)</span> (~92 min en LEO).</li>
+            <li>En <span class="badge">pruebas3d.py</span> fijamos <span class="badge">DURACION_VUELTA_S = 10 s</span>.</li>
+            <li>Se calcula <span class="badge">factor = periodo_s / 10</span> (ej: <strong>~555x</strong> más rápido).</li>
+            <li>Además se integra el tiempo no uniforme <span class="badge">tiempos_animacion_s</span> entre puntos.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: SIMULACIÓN INTERACTIVA EN LA DIAPO -->
+    <section class="slide" data-note="[~2.5 min] Usar esta simulación en vivo frente al curso para demostrar visualmente la relación entre excentricidad, perigeo, apogeo y el cambio de velocidad por vis-viva.">
+      <span class="tag">07 · Laboratorio Visual Interactivo</span>
+      <h2>Kepler y Vis-Viva en acción</h2>
+      <div class="sim-wrap">
+        <div>
+          <canvas id="orbitCanvas" width="620" height="360"></canvas>
+        </div>
+        <div class="card controls">
+          <h3>Controles de demostración</h3>
+          <div class="btn-row">
+            <button class="btn" onclick="setEccPreset(0.0005)">ISS (e=0.0005)</button>
+            <button class="btn" onclick="setEccPreset(0.55)">Elíptica (e=0.55)</button>
+            <button class="btn primary" id="togglePlayBtn" onclick="toggleSim()">Pausar</button>
+          </div>
+
+          <label>Excentricidad (e): <strong id="eccVal">0.35</strong></label>
+          <input type="range" id="eccSlider" min="0" max="0.72" step="0.01" value="0.35" oninput="updateEcc(this.value)" />
+
+          <div class="telemetry">
+            <div class="tel-box"><span>Radio actual (r)</span><strong id="telR">-- km</strong></div>
+            <div class="tel-box"><span>Velocidad (v)</span><strong id="telV">-- km/s</strong></div>
+            <div class="tel-box"><span>v Perigeo (máx)</span><strong id="telVp">-- km/s</strong></div>
+            <div class="tel-box"><span>v Apogeo (mín)</span><strong id="telVa">-- km/s</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: ESCENA 3D -->
+    <section class="slide" data-note="[~1.5 min] Mostrar cómo se arma la Tierra en Matplotlib: esfera translúcida + malla geográfica (Ecuador verde, Greenwich rojo) + ejes + elipse inclinada.">
+      <span class="tag">08 · Renderizado 3D</span>
+      <h2>Construcción de la escena en Matplotlib</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>1. Globo Terrestre</h3>
+          <p><span class="badge">esfera(0,0,0, 1, n=60)</span> genera una malla paramétrica unitaria con <span class="badge">alpha=0.3</span> para poder ver el satélite incluso cuando pasa por detrás.</p>
+        </div>
+        <div class="card">
+          <h3>2. Malla y Ejes</h3>
+          <ul class="clean">
+            <li><span class="badge">lineas_tierra()</span>: 12 meridianos y 5 paralelos.</li>
+            <li><span class="badge green">Ecuador</span> en verde y <span class="badge red">Greenwich</span> en rojo.</li>
+            <li><span class="badge">dibujar_ejes()</span>: eje polar N-S y vectores X, Y, Z.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>3. Trayectoria Orbital</h3>
+          <p><span class="badge">punto_orbita(t, a, b, θ)</span> traza 300 puntos de la elipse con semiejes <span class="badge">a, b</span> e inclinación orbital aplicada alrededor del eje X.</p>
+        </div>
+      </div>
+      <div class="card" style="margin-top: 18px;">
+<pre><span class="cm"># Aspecto real 1:1:1 para que la Tierra no se vea deformada como un elipsoide</span>
+ax.set_box_aspect((<span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>))
+ax.set_axis_off()   <span class="cm"># Oculta las cajas grises de Matplotlib y deja solo el espacio</span></pre>
+      </div>
+    </section>
+
+    <!-- SLIDE 10: ANIMACIÓN -->
+    <section class="slide" data-note="[~1.5 min] Explicar el bucle de FuncAnimation: 120 frames por vuelta, intervalo calculado para cumplir DURACION_VUELTA_S, borrando y redibujando la esfera naranja en cada frame.">
+      <span class="tag">09 · Animación en Tiempo Real</span>
+      <h2>Cómo se mueve el satélite (<span class="badge">FuncAnimation</span>)</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Ciclo de cada cuadro</h3>
+          <ul class="clean">
+            <li>Se divide la vuelta en <strong>120 frames</strong>: <span class="badge">intervalo = 10000 ms / 120 ≈ 83.3 ms</span>.</li>
+            <li>En cada frame, Matplotlib llama a <span class="badge">actualizar(frame, ...)</span>.</li>
+            <li>Calcula <span class="badge">t0 = 2π * frame / 120</span> y llama a <span class="badge">dibujar_pelota()</span>.</li>
+            <li><span class="badge">dibujar_pelota()</span> elimina la esfera anterior (<span class="badge">pelota[0].remove()</span>), calcula la nueva coordenada con <span class="badge">punto_orbita</span> y dibuja una esfera naranja (<span class="badge">r = 0.2</span>).</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Código del bucle principal</h3>
+<pre><span class="kw">def</span> <span class="fn">dibujar_pelota</span>(t0, pelota, ax, a, b, theta):
+    <span class="kw">if</span> pelota[<span class="num">0</span>] <span class="kw">is not None</span>:
+        pelota[<span class="num">0</span>].remove()
+    px, py, pz = punto_orbita(t0, a, b, theta)
+    x2, y2, z2 = esfera(px, py, pz, <span class="num">0.2</span>)
+    pelota[<span class="num">0</span>] = ax.plot_surface(x2, y2, z2, color=<span class="str">'orange'</span>)
+
+<span class="kw">def</span> <span class="fn">actualizar</span>(frame, pelota, ax, a, b, theta):
+    dibujar_pelota(<span class="num">2</span> * np.pi * frame / <span class="num">120</span>, pelota, ax, a, b, theta)</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 11: DEMO EN VIVO -->
+    <section class="slide" data-note="[~3 min] Hacer Alt+Tab a la terminal/IDE, correr python pruebas3d.py, rotar la cámara 3D con el mouse para mostrar la inclinación y señalar el panel de texto en pantalla.">
+      <div class="demo-banner">
+        <span class="tag">10 · Demostración en Vivo</span>
+        <h1>Ejecución de <span style="color:var(--accent);">pruebas3d.py</span></h1>
+        <p class="subtitle" style="margin: 14px auto 0;">
+          Ahora pasamos al entorno de Python para ver el modelo 3D interactivo, la rotación manual de cámara, las referencias geográficas y los cálculos reales en pantalla.
+        </p>
+        <div class="demo-cmd">python pruebas3d.py</div>
+      </div>
+    </section>
+
+    <!-- SLIDE 12: LIMITACIONES Y PRÓXIMOS PASOS -->
+    <section class="slide" data-note="[~2 min] Cerrar mostrando madurez técnica: sabemos exactamente qué simplificaciones tiene el prototipo y qué piezas ya están listas en Funciones3D.py para la siguiente versión.">
+      <span class="tag">11 · Balance y Trabajo Futuro</span>
+      <h2>Estado actual y próximos pasos</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Lo que logramos hoy</h3>
+          <ul class="clean">
+            <li>Pipeline completo desde JSON real hasta escena 3D animada.</li>
+            <li>Cálculo físico exacto de alturas, períodos y velocidades extremas.</li>
+            <li>Código modular, documentado y con respaldo automático (ISS).</li>
+          </ul>
+        </div>
+        <div class="card highlight">
+          <h3>Siguiente iteración (ya preparada en el código)</h3>
+          <ul class="clean">
+            <li><strong>Rotación terrestre:</strong> conectar <span class="badge">rotar_z()</span> y <span class="badge">DIA_SIDEREO</span> al bucle de animación.</li>
+            <li><strong>Orientación 3D completa:</strong> sumar <span class="badge">RAAN</span> y <span class="badge">ARG_OF_PERICENTER</span> en <span class="badge">punto_orbita()</span> y ubicar la Tierra en el foco.</li>
+            <li><strong>Velocidad variable visual:</strong> usar <span class="badge">tiempos_animacion_s</span> en <span class="badge">actualizar()</span> para reflejar aceleración en perigeo.</li>
+          </ul>
+        </div>
+      </div>
+      <p style="text-align:center; margin-top: 22px; color: var(--accent); font-weight: 700; font-size: 1.2rem;">
+        ¡Muchas gracias! ¿Alguna pregunta?
+      </p>
+    </section>
+
+  </main>
+
+  <!-- Notas del orador -->
+  <div class="speaker-notes" id="speakerNotes"></div>
+
+  <!-- Navegación -->
+  <nav class="nav-bar">
+    <button onclick="prevSlide()" title="Anterior (←)">◀</button>
+    <span class="slide-counter" id="slideCounter">1 / 12</span>
+    <button onclick="nextSlide()" title="Siguiente (→)">▶</button>
+    <button onclick="toggleNotes()" title="Notas del orador (Tecla N)">📝</button>
+    <button onclick="toggleFullscreen()" title="Pantalla completa (F11)">⛶</button>
+  </nav>
+
+  <script>
+    // =====================================================
+    // NAVEGACIÓN DE DIAPOSITIVAS
+    // =====================================================
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const progressBar = document.getElementById("progressBar");
+    const slideCounter = document.getElementById("slideCounter");
+    const speakerNotes = document.getElementById("speakerNotes");
+    let current = 0;
+
+    function showSlide(index) {
+      current = Math.max(0, Math.min(index, slides.length - 1));
+      slides.forEach((s, i) => s.classList.toggle("active", i === current));
+      const pct = ((current + 1) / slides.length) * 100;
+      progressBar.style.width = pct + "%";
+      slideCounter.textContent = `${current + 1} / ${slides.length}`;
+      speakerNotes.textContent = "Guía: " + (slides[current].dataset.note || "");
+    }
+
+    function nextSlide() { showSlide(current + 1); }
+    function prevSlide() { showSlide(current - 1); }
+
+    function toggleNotes() {
+      speakerNotes.classList.toggle("visible");
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "INPUT") return;
+      if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key.toLowerCase() === "n") {
+        toggleNotes();
+      }
+    });
+
+    showSlide(0);
+
+    // =====================================================
+    // SIMULACIÓN INTERACTIVA KEPLER / VIS-VIVA (SLIDE 8)
+    // =====================================================
+    const canvas = document.getElementById("orbitCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const MU = 398600.0;
+    const A_KM = 11000.0;
+    let ecc = 0.35;
+    let playing = true;
+    let trueAnomaly = 0;
+    let lastTime = performance.now();
+
+    function updateEcc(val) {
+      ecc = parseFloat(val);
+      document.getElementById("eccVal").textContent = ecc.toFixed(2);
+      document.getElementById("eccSlider").value = ecc;
+      updateMinMaxTelemetry();
+    }
+
+    function setEccPreset(val) {
+      updateEcc(val);
+    }
+
+    function toggleSim() {
+      playing = !playing;
+      document.getElementById("togglePlayBtn").textContent = playing ? "Pausar" : "Reanudar";
+    }
+
+    function updateMinMaxTelemetry() {
+      const rp = A_KM * (1 - ecc);
+      const ra = A_KM * (1 + ecc);
+      const vp = Math.sqrt(MU * (2 / rp - 1 / A_KM));
+      const va = Math.sqrt(MU * (2 / ra - 1 / A_KM));
+      document.getElementById("telVp").textContent = vp.toFixed(2) + " km/s";
+      document.getElementById("telVa").textContent = va.toFixed(2) + " km/s";
+    }
+
+    function drawOrbitFrame(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+
+      const rNorm = (1 - ecc * ecc) / (1 + ecc * Math.cos(trueAnomaly));
+      const rKm = A_KM * rNorm;
+      const vKmS = Math.sqrt(MU * (2 / rKm - 1 / A_KM));
+
+      if (playing) {
+        const angularRate = 1.65 / (rNorm * rNorm);
+        trueAnomaly = (trueAnomaly + angularRate * dt) % (Math.PI * 2);
+      }
+
+      document.getElementById("telR").textContent = Math.round(rKm).toLocaleString() + " km";
+      document.getElementById("telV").textContent = vKmS.toFixed(2) + " km/s";
+
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const scale = 135;
+      const cx = w * 0.5 + ecc * scale * 0.55;
+      const cy = h * 0.5;
+
+      // Órbita completa
+      ctx.beginPath();
+      for (let i = 0; i <= 200; i++) {
+        const th = (i / 200) * Math.PI * 2;
+        const rn = (1 - ecc * ecc) / (1 + ecc * Math.cos(th));
+        const px = cx + rn * scale * Math.cos(th);
+        const py = cy - rn * scale * Math.sin(th);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = "rgba(248, 113, 113, 0.85)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Etiquetas Perigeo y Apogeo
+      const rpX = cx + (1 - ecc) * scale;
+      const raX = cx - (1 + ecc) * scale;
+      ctx.fillStyle = "#64748b";
+      ctx.font = "12px Consolas, monospace";
+      ctx.fillText("Perigeo", rpX - 24, cy + 20);
+      ctx.fillText("Apogeo", raX - 20, cy + 20);
+
+      // Tierra en el foco
+      const earthR = 24;
+      const grad = ctx.createRadialGradient(cx - 6, cy - 6, 4, cx, cy, earthR);
+      grad.addColorStop(0, "#60a5fa");
+      grad.addColorStop(1, "#1d4ed8");
+      ctx.beginPath();
+      ctx.arc(cx, cy, earthR, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Ecuador de referencia
+      ctx.beginPath();
+      ctx.moveTo(cx - earthR, cy);
+      ctx.lineTo(cx + earthR, cy);
+      ctx.strokeStyle = "#34d399";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Vector radio al satélite
+      const sx = cx + rNorm * scale * Math.cos(trueAnomaly);
+      const sy = cy - rNorm * scale * Math.sin(trueAnomaly);
+      ctx.beginPath();
+      ctx.setLineDash([4, 4]);
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(sx, sy);
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.45)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Satélite
+      ctx.beginPath();
+      ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+      ctx.fillStyle = "#f59e0b";
+      ctx.fill();
+      ctx.strokeStyle = "#fef3c7";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      requestAnimationFrame(drawOrbitFrame);
+    }
+
+    updateMinMaxTelemetry();
+    requestAnimationFrame(drawOrbitFrame);
+  </script>
+</body>
+</html>
